@@ -1,0 +1,2 @@
+# FCNNeuralNetworkDemoForHandwrittenDigits
+手写数字识别全连接神经网络教学Demo
