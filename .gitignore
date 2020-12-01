@@ -82,3 +82,4 @@ mnist.pkl.gz
 *.svg
 *.ipynb
 main.py
+*.model

@@ -7,6 +7,7 @@
 from os import listdir
 import numpy as np
 import matplotlib.pyplot as plt
+import pickle
 # 函数img2vector将图像转换为向量
 def img2vector(filename):
     returnVect = np.zeros((1, 1024))
@@ -16,8 +17,6 @@ def img2vector(filename):
         for j in range(32):
             returnVect[0, 32 * i + j] = int(lineStr[j])
     return returnVect
-
-
 
 
 # 读取手写字体txt数据
@@ -47,14 +46,6 @@ def Sigmoid(x, diff=False):
     if (diff == True):
         return dsigmoid(x)
     return sigmoid(x)
-
-
-# 防止溢出型
-def softmax(x):
-    c = np.max(x)
-    exp_x = np.exp(x - c)
-    sum_exp_x = np.sum(exp_x)
-    return exp_x / sum_exp_x
 
 # diff = True求导
 def SquareErrorSum(y_hat, y, diff=False):
@@ -108,6 +99,20 @@ class Net():
     def setLearnrate(self, l):
         self.alpha = l
 
+    def save(self,path):
+        obj = pickle.dumps(self)
+        with open(path,"wb") as f:
+            f.write(obj)
+
+    def load(path):
+        obj = None
+        with open(path, "rb") as f:
+            try:
+                obj = pickle.load(f)
+            except:
+                print("IOError")
+        return obj
+
     def train(self, trainMat, trainLabels, Epoch=5, bitch=None):
         for epoch in range(Epoch):
             acc = 0.0
@@ -127,7 +132,7 @@ class Net():
 
             acc = acc_cnt / len(trainMat)
             self.losslist.append(Loss)
-            print("epoch:%d,loss:%02f,accrucy : %02f" % (epoch, Loss, acc))
+            print("epoch:%d,loss:%02f,accrucy : %02f%%" % (epoch, Loss, acc*100))
         self.plotLosslist(self.losslist, "Loss:Init->randn,alpha=0.01")
 
     def plotLosslist(self, Loss, title):
@@ -145,10 +150,37 @@ class Net():
         plt.xlabel(r'Epoch', font)
         plt.ylabel(u'Loss', font)
         plt.show()
-        
+
+    def test(self, testMat, testLabels, bitch=None):
+        acc = 0.0
+        acc_cnt = 0
+        label = np.zeros((10, 1))#先生成一个10x1是向量，减少运算。用于生成one_hot格式的label
+        if(bitch == None):
+            bitch = len(testMat)
+        for i in range(bitch):#可以用batch，数据较少，一次训练所有数据集
+            X = testMat[i, :].reshape((1024, 1)) #生成输入
+
+            labelidx = testLabels[i]
+            label[labelidx][0] = 1.0
+
+            Loss, y_hat = self.forward(X, label, Sigmoid)#前向传播
+
+            label[labelidx][0] = 0.0#还原为0向量
+            acc_cnt += int(testLabels[i] == np.argmax(y_hat))
+        acc = acc_cnt / bitch
+        print("test num: %d, accrucy : %05.3f%%"%(bitch,acc*100))
+
+
 # 读取训练数据
 trainDataPath = "./trainingDigits"
 trainMat, trainLabels = handwritingData(trainDataPath)
+testDataPath = "./testDigits"
+testMat, testLabels = handwritingData(testDataPath)
 net = Net()
 net.setLearnrate(0.01)
-net.train(trainMat, trainLabels, Epoch=100)
+net.train(trainMat, trainLabels, Epoch=200)
+net.save("hr.model")
+net.test(testMat, testLabels)
+
+newmodel = Net.load("hr.model")
+newmodel.test(testMat, testLabels)
