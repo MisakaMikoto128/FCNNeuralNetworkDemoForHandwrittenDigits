@@ -5,7 +5,9 @@
 # @Data: 2020/11/30
 # @IDE: PyCharm
 from os import listdir
+
 import numpy as np
+import cupy as cp
 import matplotlib.pyplot as plt
 import pickle
 # 函数img2vector将图像转换为向量
@@ -24,25 +26,22 @@ def handwritingData(dataPath):
     hwLabels = []
     FileList = listdir(dataPath)  # 1 获取目录内容
     m = len(FileList)
-    digitalmat = np.zeros((m, 1024))
+    np.Mat = np.zeros((m, 1024))
     for i in range(m):
         # 2 从文件名解析分类数字
         fileNameStr = FileList[i]
         fileStr = fileNameStr.split('.')[0]  # take off .txt
         classNumStr = int(fileStr.split('_')[0])
         hwLabels.append(classNumStr)
-        #print(digitalmat[i, :].shape)#(1024,)
-        #print(img2vector(dataPath + '/%s' % fileNameStr).shape)  # (1, 1024)
-        #print(digitalmat[i].shape)  # (1024,)
-        digitalmat[i] = img2vector(dataPath + '/%s' % fileNameStr)
-    return digitalmat, hwLabels
+        np.Mat[i, :] = img2vector(dataPath + '/%s' % fileNameStr)
+    return np.Mat, hwLabels
 
 
 
 # diff = True求导
 def Sigmoid(x, diff=False):
     def sigmoid(x):        # sigmoid函数
-        return 1 / (1 + np.exp(-x))
+        return 1 / (1 + cp.exp(-x))
     def dsigmoid(x):
         f = sigmoid(x)
         return f * (1 - f)
